@@ -1,8 +1,11 @@
-RJMCMC---Claim-Reserves-Bayes-ODP
-=================================
 
 RJMCMC 与准备金评估模型选择
+===
+---
 
-![tupian](https://raw.github.com/gaolei786/RJMCMC---Claim-Reserves-Bayes-ODP/master/graph/x.png)
+我的主要工作就是用程序把RJMCMC实现。我的思路是这样的：
 
-![tupian](https://raw.github.com/gaolei786/RJMCMC---Claim-Reserves-Bayes-ODP/master/graph/tupian2.pdf)
+
+  1.  定义若干更新函数。我们记为<code>A1(),A2()....</code>
+  2.  定义总函数<code>move(n),n</code>为循环次数。在这个函数的主要结构为一个循环，这个循环依次将前面定义的更新函数串联起来。函数的返回结果是一个列表（更新的参数特别多，类型不一，最好的返回类型就是列表）
+
