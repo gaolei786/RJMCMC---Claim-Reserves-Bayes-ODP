@@ -3,9 +3,9 @@ alpha <- -1.6159
 beta <- 0.2
 I <- 9
 u <- 1.02^(0:I)*10^7
-r <- NULL
-r[1:4] <- c(15.9, 17.9, 17.9, 13.9) / 100
-r[5:10] <- exp(alpha - beta * (4:I))
+r.true <- NULL
+r.true[1:4] <- c(15.9, 17.9, 17.9, 13.9) / 100
+r.true[5:10] <- exp(alpha - beta * (4:I))
 phi <- 25000
 #####################################
 #X0 <- 0
@@ -214,21 +214,29 @@ beta <- 0.2
 lambda <- 10
 
 
-iteration <- 20000 
+iteration <- 100000 
 set.seed(123)   
 listre <- move(n = iteration, k.start=7, r.start=r, u.start=u, alpha.start=alpha, beta.start=beta) 
 plot(listre$k, type = "l", xlab = "", ylab = "", col = rgb(0, 0, 0, 0.3))
 table(listre$k)/length(listre$k)
 
 plot(listre$r[, 1], type = "l", xlab = "", ylab = "")
-plot(listre$u[, 20], type = "l", xlab = "", ylab = "")
+plot(listre$u[, 2], type = "l", xlab = "", ylab = "", col = rgb(0, 0, 0, 0.3))
 
-re <- listre$r[listre$k==7, ]
-plot(log(apply(re,2, mean)), type = "l", ylim = c(-6, -1))
+re <- listre$r[listre$k==4, ]
+plot(log(apply(re,2, mean)), type = "l", ylim = c(-4, -1.5), lty = 3)
 lines(log(apply(re,2, mean) + 2 * apply(listre$r, 2, sd)), lty = 3)
 lines(log(apply(re,2, mean) - 2 * apply(listre$r, 2, sd)), lty = 3)
-points(1:22, log(apply(re,2, mean) + 2 * apply(listre$r, 2, sd)),
+lines(log(r), lty = 4)
+points(log(r), pch = 5)
+alpha <- -1.6159
+beta <- 0.2
+r.true <- NULL
+r.true[1:4] <- c(15.9, 17.9, 17.9, 13.9) / 100
+r.true[5:10] <- exp(alpha - beta * (4:I))
+lines(log(r.true))
+points(1:10, log(apply(re,2, mean) + 2 * apply(listre$r, 2, sd)),
   pch = 4, cex = 0.5)
-points(1:22, log(apply(re,2, mean) - 2 * apply(listre$r, 2, sd)),
+points(1:10, log(apply(re,2, mean) - 2 * apply(listre$r, 2, sd)),
   pch = 4, cex = 0.5)
 abline(h = seq(-6, -1, length = 6), col = rgb(0, 0, 0, 0.1))
