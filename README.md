@@ -1,4 +1,3 @@
-
 RJMCMC 与准备金评估模型选择
 ===
 ---
@@ -34,3 +33,6 @@ RJMCMC 与准备金评估模型选择
 ![tupian](https://raw.github.com/gaolei786/RJMCMC---Claim-Reserves-Bayes-ODP/master/graph/5.png)
 
 
+---
+
+RJMCMC的代码储存于上面code文件夹中，数据存储于上面data文件夹中。
