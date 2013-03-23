@@ -1,0 +1,353 @@
+\documentclass{beamer}
+\usepackage{alltt}
+\usepackage{ctex}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{multimedia}
+\usepackage[buttonsize=1em]{animate}
+\setbeamercovered{transparent}
+\renewcommand\arraystretch{0.5}
+\usepackage{multicol}
+\title[南开精算研讨会]{Reversible Jump MCMC与准备金估计模型选择}
+\author{刘乐平、高磊}
+\usetheme{CambridgeUS}
+\institute{天津财经大学统计系}
+\pgfdeclareimage[height=1.2cm]{logo}{tubiao.jpg}
+\logo{\pgfuseimage{logo}\hspace{-2pt}\vspace{-8pt}}
+
+\setbeamertemplate{navigation symbols}{}
+
+\setbeamertemplate{caption}[numbered]
+\setbeamercovered{transparent}
+\AtBeginSection[]
+{\begin{frame}
+\frametitle{内容}
+\setcounter{tocdepth}{2}
+\tableofcontents[sections={\thesection}]
+\end{frame}
+}
+\begin{document}
+
+\begin{frame}[fragile]
+<<setup, include=FALSE>>=
+opts_chunk$set(fig.path='figure/beamer-',fig.align='center',fig.show='hold',size='footnotesize')
+@
+\maketitle
+\end{frame}
+\begin{frame}
+\frametitle{参考文献}
+\begin{itemize}
+\item[\star] GREEN, P. J. 1995. Reversible Jump Markov Chain Monte Carlo Computation and Bayesian Model Determination.Biometrika.
+\item[\star] VERRALL, R. J., AND M. V. WUTHRICH. 2012.Reversible Jump Markov Chain Monte Carlo
+Method For Parameter Reduction In Claims Reserving.North American Actuarial Journal.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Contents}
+\setcounter{tocdepth}{1}
+\tableofcontents[pausesections]
+
+\end{frame}
+\section{Bayesian ODP(Over Distributed Possion) 模型}
+\subsection{问题背景}
+
+\begin{frame}[fragile]
+\frametitle{损失流量三角形}
+
+\begin{table}
+  \centering
+  \begin{tabular}{|p{0.1\textwidth}||p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}p{0.05\textwidth}|}
+  \hline
+  accident & \multicolumn{10}{c|}{development years j} \\
+  
+  year $i$ & 0 & 1 & 2 & 3 & 4 & \ldots & j & & \ldots & J \\
+  \hline
+  0 & \multicolumn{10}{c|}{} \\
+  \cline{11-11}
+  1 & \multicolumn{9}{c|}{} & \multicolumn{1}{|c|}{} \\
+  \cline{10-10}
+  \ldots & \multicolumn{8}{c|}{observations $D_{I}} & \multicolumn{2}{|c|}{} \\
+  \cline{9-9}
+  \ldots & \multicolumn{7}{c|}{} & \multicolumn{3}{|c|}{} \\
+  \cline{8-8}  
+  i & \multicolumn{6}{c|}{} & \multicolumn{4}{|c|}{} \\
+  \cline{7-7}  
+  \ldots & \multicolumn{5}{c|}{} & \multicolumn{5}{|c|}{} \\
+  \cline{6-6}  
+  \ldots & \multicolumn{4}{c|}{} & \multicolumn{6}{|c|}{} \\
+  \cline{5-5}
+
+  $I-2$ & \multicolumn{3}{c|}{} & \multicolumn{7}{|c|}{predicted $D_{i}^{c}} \\
+  \cline{4-4}
+  $I-1$ & \multicolumn{2}{c|}{} & \multicolumn{8}{|c|}{} \\
+  \cline{3-3}
+  $I$ & \multicolumn{1}{c|}{} & \multicolumn{9}{|c|}{} \\
+  \hline
+  \end{tabular}
+\end{table}
+我们考虑\textcolor{blue}{$I=J$}这种情况。
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{乘法模型}
+
+有以下记号：\\
+\begin{itemize}
+  \item[\star] 事故年水平：$\mu_{i}$\\
+  \item[\star] 进展年水平：$r_{j}$\\
+  \item[\star] 乘法模型：$E_{\mu_{i},\gamma_{j}}[X_{i, j}]=\mu_{i} \gamma_{j}, i,j \in {0, ..., I}$
+\end{itemize}
+根据乘法模型，为了估计增量下三角形，须估计出$2(I+1)$个参数$\mu_{0},...,\mu_{I};\gamma_{0},...,\gamma{I}$。而我们仅有$(I+1)(I+2)/2$个数据(上三角形数据的个数)。统计中，我们把它称为\textcolor{red}{过度参数化}问题。
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{解决过度参数化问题}
+为解决过度参数化问题，很自然地就是用一条曲线拟合这些参数，例如，用指数递减曲线拟合$\gamma_{0},...,\gamma_{I}$。
+<<fig.width=8,fig.height=3,out.width='.9\\linewidth', include=TRUE, error=FALSE,echo=FALSE>>=
+plot(0:21, exp(seq(-1, -6, length = 22))
+, type = "l", ylab = "", xlab = "r",col="red")
+segments(0:21, rep(0, 22), 0:21, exp(seq(-1, -6, length = 22)), col = "blue")
+@
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{解决过度参数化问题}
+\begin{itemize}
+\item[\star] 举例，$I=8,k=4$
+\begin{figure}
+    \centering
+    \includegraphics[width = 0.7\textwidth, height = 0.4\textwidth]{tupian.jpg}
+    \caption{GAM}
+\end{figure}
+\end{itemize}
+
+\end{frame}
+
+\subsection{ODP模型}
+\begin{frame}
+\frametitle{ ODP Model--超散布泊松分布模型}
+ 
+\begin{itemize}
+\item<2->[\star] 给定$\vartheta=(\mu_{0},...,\mu_{I};\gamma_{0},...,\gamma_{I}, \phi)$,$X_{i,j}$为独立随机变量，满足\[
+\frac{X_{i, j}}{\phi}|_{\vartheta}\sim Poisson(\mu_{i}\gamma_{j}/\phi)\]
+
+\item<3->[\star] 与泊松分布的区别：\[
+E[X_{i,j}|\vartheta] = \mu_{i}\gamma_{j} \] \[
+Var(X_{i, j}|\vartheta) = \textcolor{red}{\fbox{\phi \mu_{i} \gamma_{j} }}\]
+\end{itemize}
+
+
+
+\end{frame}
+\subsection{贝叶斯方法用于ODP估计}
+\begin{frame}[fragile]
+\frametitle{ODP model  + GAM + Bayes}
+固定k:
+\begin{itemize}
+\item<2->[\star]   模型参数为：\[
+\theta_{k}=(\alpha, \beta, \mu_{0},...,\mu_{I};\gamma_{0},...,\textcolor{red}{\gamma_{k-1}})\]
+\item<3->[\star] 对于$j \in {k, \ldots, I}$,
+\[\gamma_{j}=exp(\alpha-j\beta) \]
+\item<4->[\star] 先验分布为\[
+\mu_{i} \sim \Gamma(s,s/m_{i}) ,i = 0, \ldots , I,\]
+\[\gamma_{j}\sim\Gamma(v, v/c_{j}), j=0,\ldots, \textcolor{red}{k-1}\]
+\[\alpha \sim N(\alpha, \sigma^{2}), \beta \sim N(b, \tau^{2})\]
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{后验分布的推导}
+\begin{itemize}
+\item<2->[\star] 后验分布：\begin{equation}
+p_{k}(\theta_{k}|(X_{i,j})_{(i,j)\in \Omega}) \propto f_{k}((X_{i,j})_{(i,j)\in \Omega}, \theta_{k}) \end{equation}
+\item<3->[\star] 利用\textcolor{red}{MCMC}可以从该分布中采样，进而获得相关参数的估计值，以此可以估计得到准备金。
+\item<4->[\star] k\big{\textcolor{red}{?????}},\textcolor{blue}{Let the data speak.}\textcolor{red}{How?}\textcolor{blue}{Answer:Bayes idea again! + Tool:RJMCMC!}
+\end{itemize}
+\end{frame}
+\section{RJMCMC}
+
+\begin{frame}[fragile]
+\frametitle{采样样本概况}
+利用RJMCMC抽样得到的样本概况（M1有一个参数，M2有两个参数）。
+\begin{table}
+  \centering
+  \begin{tabular}{|c|c|c|c|}
+  \hline
+  T & 模型 & \multicolumn{2}{|c|}{参数}  \\
+  \hline
+  t & 1 & $\theta_{11}^{t}$ &  \\
+  t+1 & 2 & $\theta_{21}^{t+1}$ & $\theta_{22}^{t+1} \\
+  t+2 & 2 & $\theta_{21}^{t+2}$ & $\theta_{22}^{t+2} \\
+  t+3 & 1 & $\theta_{11}^{t+3}$ &  \\
+  t+4 & 1 & $\theta_{11}^{t+4}$ &  \\
+  t+5 & 1 & $\theta_{11}^{t+5}$ &  \\
+  t+6 & 2  & $\theta_{21}^{t+2}$ & $\theta_{22}^{t+2} \\
+  \ldots & \ldots & \ldots & \ldots \\
+  \hline
+  \end{tabular}
+  
+  \caption{RJMCMC样本示例}
+\end{table}
+\end{frame}
+
+
+
+
+
+\section{准备金实例分析}
+\begin{frame}[fragile]
+\frametitle{关于数据的设计}
+\begin{figure}
+    \centering
+    \includegraphics[width = 0.8\textwidth, height = 0.45\textwidth]{tupian1.jpg}
+    \caption{模拟数据设计}
+\end{figure}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{关于数据的设计}
+\begin{itemize}
+\item[\star] 我们定义事故年数为10，进展年也为10.
+<<>>=
+I <- 9
+@
+\item[\star] 事故年水平的定义为
+<<>>=
+u = 1.02^(0:I)*10^7
+u
+@
+\item[\star] 我们设计的数据在k=4处划分为两段，$\gamma_{0},...,\gamma_{3}$有具体的数值定义，而 $\gamma_{4},...,\gamma_{9}$则服从一指数递减曲线，相关参数也已经设置。
+<<>>=
+r0_3 <- c(0.159, 0.179, 0.179, 0.139)
+alpha = -1.6159
+beta = 0.2 
+r4_9 <- exp(alpha-beta*(4:9))
+@
+\end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{关于数据的设计}
+<<echo=FALSE,comment="",size = "tiny">>=
+library(LearnBayes)
+X <- read.table("data.txt")
+names(X) <- 0:9
+rownames(X) <- 0:9
+X
+alpha <- -1.6159
+@
+\end{frame}
+\begin{frame}[fragile]
+\frametitle{RJMCMC采样结果}
+\begin{figure}
+    \centering
+    \includegraphics[width = 0.8\textwidth, height = 0.45\textwidth]{tupian2.pdf}
+    \caption{RJMCMC采样K值}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{RJMCMC采样结果}
+\begin{figure}
+    \centering
+    \includegraphics[width = 0.8\textwidth, height = 0.45\textwidth]{tupian3.pdf}
+    \caption{RJMCMC采样K值}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{RJMCMC采样结果}
+\begin{figure}
+    \centering
+    \includegraphics[width = 0.8\textwidth, height = 0.45\textwidth]{tupian6.pdf}
+    \caption{RJMCMC采样r.2样本}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{RJMCMC采样结果}
+\begin{figure}
+    \centering
+    \includegraphics[width = 0.8\textwidth, height = 0.45\textwidth]{tupian5.pdf}
+    \caption{RJMCMC采样r.2分布}
+\end{figure}
+\end{frame}
+\begin{frame}
+\frametitle{RJMCMC采样结果}
+\begin{figure}
+    \centering
+    \includegraphics[width = 0.8\textwidth, height = 0.45\textwidth]{tupian4.pdf}
+    \caption{RJMCMC采样r均值}
+\end{figure}
+\end{frame}
+\section*{祝福}
+\subsection*{祝福}
+\begin{frame}[fragile]
+<<fig.width=10, fig.height=7, fig.show='animate', echo=FALSE, out.width='.99\\linewidth', interval= 0.2>>=
+rep.data.frame <- function(x, n) {
+  l <- ncol(x)
+  r <- NULL
+  for (i in 1:l) {
+    for (j in 1:n) {
+      r <- cbind(r, x[, i])
+    }
+  }
+  return(r)
+}
+
+root <- data.frame(a = c(0, 2, 2, pi / 2))
+r <- NULL
+fun <- function(x) {
+  x1 <- x[1] + cos(x[4] + pi / 9) * x[3] * 0.7
+  x2 <- x[1] + cos(x[4] - pi / 9) * x[3] * 0.7
+  y1 <- x[2] + sin(x[4] + pi / 9) * x[3] * 0.7
+  y2 <- x[2] + sin(x[4] - pi / 9) * x[3] * 0.7  
+  r1  <- c(x1, y1, x[3] * 0.7, x[4] + pi / 9)
+  r2  <- c(x2, y2, x[3] * 0.7, x[4] - pi / 9) 
+  return(cbind(r1, r2))
+}
+n <- 9
+for (i in 1:n) {
+  
+
+  r <- rbind(r, rep.data.frame(root, 2^(n - i)))
+  r1 <- sapply(data.frame(root), fun)
+  root <- NULL
+  for(j in 1:ncol(r1)) {
+    root <- cbind(root, cbind(r1[1:4, j], r1[5:8, j]))
+  }
+  
+}
+  plot(x = c(0, 0), y = c(0, 2), xlim = c(-4, 4), ylim = c(0, 7), type = "l", cex = 0.5, col = "red", lwd = 15, axes = F, xlab = "", ylab = '')
+for(j in 1:8) {
+
+  plot(x = c(0, 0), y = c(0, 2), xlim = c(-4, 4), ylim = c(0, 7), type = "l", cex = 0.5, col = "red", lwd = 15, axes = F, xlab = "", ylab = '')
+  i <- 1:j
+    
+    segments(r[1 + 4 * (i - 1), ], r[2 + 4 * (i - 1), ],
+      r[5 + 4 * (i - 1), ], r[6 + 4 * (i - 1), ], lwd = 14 / i, col = 15 / i)
+  }
+  
+   
+ 
+  plot(x = c(0, 0), y = c(0, 2), xlim = c(-4, 4), ylim = c(0, 7), type = "l", cex = 0.5, col = "red", lwd = 15, axes = F, xlab = "", ylab = '')
+  i <- 1:8
+    
+    segments(r[1 + 4 * (i - 1), ], r[2 + 4 * (i - 1), ],
+      r[5 + 4 * (i - 1), ], r[6 + 4 * (i - 1), ], lwd = 14 / i, col = 15 / i)
+ points(r[33, ], r[34, ], col = 2, cex = 0.5) 
+
+@
+\end{frame}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}
